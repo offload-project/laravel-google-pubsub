@@ -10,6 +10,7 @@ use Exception;
 use Google\Cloud\PubSub\PubSubClient;
 use Google\Cloud\PubSub\Subscription;
 use Google\Cloud\PubSub\Topic;
+use GuzzleHttp\Exception\ConnectException;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Contracts\Queue\Queue as QueueContract;
 use Illuminate\Queue\Queue;
@@ -197,10 +198,13 @@ class PubSubQueue extends Queue implements QueueContract
     {
         $subscription = $this->getSubscription($this->getQueue($queue));
 
-        $messages = $subscription->pull([
-            'maxMessages' => $this->options['max_messages'] ?? 1,
-            'returnImmediately' => false,
-        ]);
+        try {
+            $messages = $subscription->pull([
+                'maxMessages' => $this->options['max_messages'] ?? 1,
+            ]);
+        } catch (ConnectException $e) {
+            $messages = null;
+        }
 
         if (empty($messages)) {
             return null;
