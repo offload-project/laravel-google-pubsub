@@ -77,6 +77,7 @@ final class PubSubConnector implements ConnectorInterface
             }
 
             $pubsubConfig['keyFilePath'] = $keyFile;
+            $pubsubConfig['keyFile'] = json_decode(file_get_contents($keyFile), true);
         }
 
         return $pubsubConfig;
