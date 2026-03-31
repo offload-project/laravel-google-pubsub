@@ -73,6 +73,54 @@ class PubSubQueue extends Queue implements QueueContract
     }
 
     /**
+     * Get the number of pending jobs.
+     *
+     * Note: Pub/Sub doesn't provide a direct way to get pending job count.
+     *
+     * @param  string|null  $queue
+     */
+    public function pendingSize($queue = null): int
+    {
+        return 0;
+    }
+
+    /**
+     * Get the number of delayed jobs.
+     *
+     * Note: Pub/Sub doesn't provide a direct way to get delayed job count.
+     *
+     * @param  string|null  $queue
+     */
+    public function delayedSize($queue = null): int
+    {
+        return 0;
+    }
+
+    /**
+     * Get the number of reserved jobs.
+     *
+     * Note: Pub/Sub doesn't provide a direct way to get reserved job count.
+     *
+     * @param  string|null  $queue
+     */
+    public function reservedSize($queue = null): int
+    {
+        return 0;
+    }
+
+    /**
+     * Get the creation timestamp of the oldest pending job.
+     *
+     * Note: Pub/Sub doesn't provide a direct way to get this information.
+     *
+     * @param  string|null  $queue
+     */
+    public function creationTimeOfOldestPendingJob($queue = null): ?int
+    {
+        return null;
+    }
+
+    /**
      * Push a new job onto the queue.
      *
      * @param  string|object  $job
