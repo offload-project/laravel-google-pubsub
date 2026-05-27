@@ -117,16 +117,17 @@ final class PubSubJob extends Job implements JobContract
      */
     public function attempts()
     {
-        $attributes = $this->message->attributes();
-
-        // First check if Laravel has tracked attempts in the payload
-        $payload = $this->payload();
-        if (isset($payload['attempts'])) {
-            return $payload['attempts'];
+        // Prefer Pub/Sub's native delivery attempt counter (1-based). It is only
+        // populated when the subscription has a dead-letter policy, and Pub/Sub
+        // increments it on each redelivery, so it makes --tries work correctly.
+        $deliveryAttempt = $this->message->deliveryAttempt();
+        if (! empty($deliveryAttempt)) {
+            return (int) $deliveryAttempt;
         }
 
-        // Fall back to Pub/Sub delivery attempt
-        return (int) ($attributes['delivery_attempt'] ?? 1);
+        // Fall back to the payload counter (queues without a dead-letter policy).
+        $payload = $this->payload();
+        return $payload['attempts'] ?? 1;
     }
 
     /**
