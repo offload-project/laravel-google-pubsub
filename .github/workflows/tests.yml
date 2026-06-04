@@ -36,6 +36,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          composer config policy.advisories.block false
           composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction
 
