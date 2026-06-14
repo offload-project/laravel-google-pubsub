@@ -127,6 +127,7 @@ final class PubSubJob extends Job implements JobContract
 
         // Fall back to the payload counter (queues without a dead-letter policy).
         $payload = $this->payload();
+
         return $payload['attempts'] ?? 1;
     }
 
