@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.1.1 - 2026-06-14
+
+### Changed
+- Repo updates [#4](https://github.com/offload-project/laravel-google-pubsub/pull/4)
+
+### Documentation
+- Update, add missing docs [#9](https://github.com/offload-project/laravel-google-pubsub/pull/9)
+
+### Other
+- Allow advisories for Laravel 11 [#7](https://github.com/offload-project/laravel-google-pubsub/pull/7)
+- Adjust Pub/Sub config and pull handling [#5](https://github.com/offload-project/laravel-google-pubsub/pull/5)
+
 ## [1.1.0](https://github.com/offload-project/laravel-google-pubsub/compare/v1.0.0...v1.1.0) (2026-03-31)
 
 
