@@ -95,7 +95,7 @@ describe('PubSubJob edge cases', function () {
         expect($body)->toBe('{"test":"data"}');
     });
 
-    it('gets attempts from payload when available', function () {
+    it('prefers Pub/Sub delivery attempt counter over payload counter', function () {
         $payload = json_encode([
             'job' => 'TestJob',
             'attempts' => 3,
@@ -104,25 +104,7 @@ describe('PubSubJob edge cases', function () {
         $this->message->shouldReceive('id')->andReturn('msg-123');
         $this->message->shouldReceive('data')->andReturn($payload);
         $this->message->shouldReceive('attributes')->andReturn([]);
-
-        $job = new PubSubJob(
-            $this->container,
-            $this->pubsubQueue,
-            $this->message,
-            $this->subscription,
-            'pubsub',
-            'default'
-        );
-
-        expect($job->attempts())->toBe(3);
-    });
-
-    it('falls back to delivery attempt when payload has no attempts', function () {
-        $payload = json_encode(['job' => 'TestJob']);
-
-        $this->message->shouldReceive('id')->andReturn('msg-123');
-        $this->message->shouldReceive('data')->andReturn($payload);
-        $this->message->shouldReceive('attributes')->andReturn(['delivery_attempt' => '2']);
+        $this->message->shouldReceive('deliveryAttempt')->andReturn(2);
 
         $job = new PubSubJob(
             $this->container,
@@ -136,12 +118,36 @@ describe('PubSubJob edge cases', function () {
         expect($job->attempts())->toBe(2);
     });
 
+    it('falls back to payload counter when delivery attempt is not populated', function () {
+        $payload = json_encode([
+            'job' => 'TestJob',
+            'attempts' => 3,
+        ]);
+
+        $this->message->shouldReceive('id')->andReturn('msg-123');
+        $this->message->shouldReceive('data')->andReturn($payload);
+        $this->message->shouldReceive('attributes')->andReturn([]);
+        $this->message->shouldReceive('deliveryAttempt')->andReturn(null);
+
+        $job = new PubSubJob(
+            $this->container,
+            $this->pubsubQueue,
+            $this->message,
+            $this->subscription,
+            'pubsub',
+            'default'
+        );
+
+        expect($job->attempts())->toBe(3);
+    });
+
     it('defaults to 1 attempt when no attempt info available', function () {
         $payload = json_encode(['job' => 'TestJob']);
 
         $this->message->shouldReceive('id')->andReturn('msg-123');
         $this->message->shouldReceive('data')->andReturn($payload);
         $this->message->shouldReceive('attributes')->andReturn([]);
+        $this->message->shouldReceive('deliveryAttempt')->andReturn(null);
 
         $job = new PubSubJob(
             $this->container,
