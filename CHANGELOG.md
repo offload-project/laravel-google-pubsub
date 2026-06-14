@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.2.0 - 2026-06-14
+
+### Fixed
+- Use Pub/Sub native deliveryAttempt counter in PubSubJob::attempts() [#6](https://github.com/offload-project/laravel-google-pubsub/pull/6)
+
+### Other
+- Add test for attempts failing jobs fix [#15](https://github.com/offload-project/laravel-google-pubsub/pull/15)
+- force release [#13](https://github.com/offload-project/laravel-google-pubsub/pull/13)
+- Feat/boost skill [#11](https://github.com/offload-project/laravel-google-pubsub/pull/11)
+
 ## v1.1.1 - 2026-06-14
 
 ### Changed
