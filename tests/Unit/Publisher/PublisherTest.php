@@ -9,16 +9,16 @@ use OffloadProject\GooglePubSub\Publisher\Publisher;
 use OffloadProject\GooglePubSub\Schema\SchemaValidator;
 
 beforeEach(function () {
-    $this->client = Mockery::mock(PubSubClient::class);
+    $this->pubsubClient = Mockery::mock(PubSubClient::class);
     $this->topic = Mockery::mock(Topic::class);
-    $this->publisher = new Publisher($this->client, [
+    $this->publisher = new Publisher($this->pubsubClient, [
         'monitoring' => ['log_published_messages' => false],
         'message_options' => ['add_metadata' => false],
     ]);
 });
 
 it('publishes a message to a topic', function () {
-    $this->client->shouldReceive('topic')
+    $this->pubsubClient->shouldReceive('topic')
         ->with('test-topic')
         ->andReturn($this->topic);
 
@@ -36,7 +36,7 @@ it('publishes a message to a topic', function () {
 });
 
 it('creates topic if auto create is enabled', function () {
-    $this->client->shouldReceive('topic')
+    $this->pubsubClient->shouldReceive('topic')
         ->with('new-topic')
         ->andReturn($this->topic);
 
@@ -44,7 +44,7 @@ it('creates topic if auto create is enabled', function () {
     $this->topic->shouldReceive('create')->once();
     $this->topic->shouldReceive('publish')->andReturn(['messageIds' => ['msg-456']]);
 
-    $publisher = new Publisher($this->client, [
+    $publisher = new Publisher($this->pubsubClient, [
         'auto_create_topics' => true,
         'monitoring' => ['log_published_messages' => false],
         'message_options' => ['add_metadata' => false],
@@ -56,7 +56,7 @@ it('creates topic if auto create is enabled', function () {
 });
 
 it('throws exception when publish fails', function () {
-    $this->client->shouldReceive('topic')
+    $this->pubsubClient->shouldReceive('topic')
         ->with('test-topic')
         ->andReturn($this->topic);
 
@@ -67,7 +67,7 @@ it('throws exception when publish fails', function () {
 })->throws(PublishException::class, 'Failed to publish message');
 
 it('publishes batch messages', function () {
-    $this->client->shouldReceive('topic')
+    $this->pubsubClient->shouldReceive('topic')
         ->with('test-topic')
         ->andReturn($this->topic);
 
@@ -90,7 +90,7 @@ it('publishes batch messages', function () {
 it('compresses large payloads when enabled', function () {
     $largeData = str_repeat('a', 2000);
 
-    $this->client->shouldReceive('topic')
+    $this->pubsubClient->shouldReceive('topic')
         ->with('test-topic')
         ->andReturn($this->topic);
 
@@ -103,7 +103,7 @@ it('compresses large payloads when enabled', function () {
         })
         ->andReturn(['messageIds' => ['msg-789']]);
 
-    $publisher = new Publisher($this->client, [
+    $publisher = new Publisher($this->pubsubClient, [
         'message_options' => [
             'compress_payload' => true,
             'compression_threshold' => 1024,
@@ -118,7 +118,7 @@ it('compresses large payloads when enabled', function () {
 });
 
 it('adds metadata when enabled', function () {
-    $this->client->shouldReceive('topic')
+    $this->pubsubClient->shouldReceive('topic')
         ->with('test-topic')
         ->andReturn($this->topic);
 
@@ -132,7 +132,7 @@ it('adds metadata when enabled', function () {
         })
         ->andReturn(['messageIds' => ['msg-meta']]);
 
-    $publisher = new Publisher($this->client, [
+    $publisher = new Publisher($this->pubsubClient, [
         'message_options' => ['add_metadata' => true],
         'monitoring' => ['log_published_messages' => false],
     ]);
@@ -148,14 +148,14 @@ it('validates message against schema when configured', function () {
         ->with(['test' => 'data'], 'test_schema')
         ->once();
 
-    $this->client->shouldReceive('topic')
+    $this->pubsubClient->shouldReceive('topic')
         ->with('test-topic')
         ->andReturn($this->topic);
 
     $this->topic->shouldReceive('exists')->andReturn(true);
     $this->topic->shouldReceive('publish')->andReturn(['messageIds' => ['msg-123']]);
 
-    $publisher = new Publisher($this->client, [
+    $publisher = new Publisher($this->pubsubClient, [
         'topics' => [
             'test-topic' => ['schema' => 'test_schema'],
         ],
@@ -166,14 +166,13 @@ it('validates message against schema when configured', function () {
     // Inject the mock validator
     $reflection = new ReflectionClass($publisher);
     $property = $reflection->getProperty('validator');
-    $property->setAccessible(true);
     $property->setValue($publisher, $validator);
 
     $publisher->publish('test-topic', ['test' => 'data']);
 });
 
 it('adds ordering key when provided', function () {
-    $this->client->shouldReceive('topic')
+    $this->pubsubClient->shouldReceive('topic')
         ->with('test-topic')
         ->andReturn($this->topic);
 

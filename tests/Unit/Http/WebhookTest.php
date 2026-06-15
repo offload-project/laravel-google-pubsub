@@ -151,7 +151,6 @@ describe('VerifyPubSubWebhook middleware', function () {
         $middleware = new VerifyPubSubWebhook();
         $reflection = new ReflectionClass($middleware);
         $method = $reflection->getMethod('ipMatches');
-        $method->setAccessible(true);
 
         expect($method->invoke($middleware, '192.168.1.100', '192.168.1.0/24'))->toBeTrue();
         expect($method->invoke($middleware, '192.168.2.100', '192.168.1.0/24'))->toBeFalse();
