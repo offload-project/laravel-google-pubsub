@@ -132,7 +132,7 @@ class Subscriber
 
             $results = [];
 
-            foreach ($messages as $message) {
+            foreach ($messages as $i => $message) {
                 try {
                     $results[] = $this->processMessage($message);
                 } catch (Exception $e) {
@@ -140,6 +140,7 @@ class Subscriber
                 }
 
                 if ($this->shouldStop()) {
+                    $this->nackRemaining(array_slice($messages, $i + 1));
                     break;
                 }
             }
@@ -217,6 +218,34 @@ class Subscriber
     public function modifyAckDeadline(Message $message, int $seconds): void
     {
         $this->getSubscription()->modifyAckDeadline($message, $seconds);
+    }
+
+    /**
+     * Nack a slice of unprocessed messages so Pub/Sub redelivers them immediately
+     * instead of waiting for the ack deadline to expire. Called on graceful shutdown
+     * when the per-message stop check breaks out of a partially-processed batch.
+     *
+     * @param  array<int, Message>  $messages
+     */
+    protected function nackRemaining(array $messages): void
+    {
+        if (empty($messages) || ! ($this->config['nack_on_shutdown'] ?? true)) {
+            return;
+        }
+
+        try {
+            $subscription = $this->getSubscription();
+
+            foreach ($messages as $message) {
+                $subscription->modifyAckDeadline($message, 0);
+            }
+        } catch (Exception $e) {
+            Log::warning('Failed to nack unprocessed messages during shutdown', [
+                'subscription' => $this->subscriptionName,
+                'count' => count($messages),
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

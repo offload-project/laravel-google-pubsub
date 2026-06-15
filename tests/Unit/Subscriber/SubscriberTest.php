@@ -232,3 +232,73 @@ it('creates dead letter topic when configured', function () {
 
     $subscriber->pull();
 });
+
+it('nacks remaining messages when shouldStop fires mid-batch', function () {
+    $message1 = Mockery::mock(Message::class);
+    $message2 = Mockery::mock(Message::class);
+    $message3 = Mockery::mock(Message::class);
+
+    foreach ([$message1, $message2, $message3] as $msg) {
+        $msg->shouldReceive('data')->andReturn('{"x":1}');
+        $msg->shouldReceive('attributes')->andReturn([]);
+        $msg->shouldReceive('id')->andReturn('msg');
+    }
+
+    $this->pubsubClient->shouldReceive('subscription')
+        ->with('test-subscription')
+        ->andReturn($this->subscription);
+
+    $this->subscription->shouldReceive('exists')->andReturn(true);
+    $this->subscription->shouldReceive('pull')
+        ->andReturn([$message1, $message2, $message3])
+        ->once();
+
+    $this->subscription->shouldReceive('acknowledge')->with($message1)->once();
+    $this->subscription->shouldReceive('modifyAckDeadline')->with($message2, 0)->once();
+    $this->subscription->shouldReceive('modifyAckDeadline')->with($message3, 0)->once();
+
+    $subscriber = new class($this->pubsubClient, 'test-subscription', null, ['monitoring' => ['log_consumed_messages' => false]]) extends Subscriber
+    {
+        protected function shouldStop(): bool
+        {
+            return true;
+        }
+    };
+
+    $subscriber->handler(fn () => null);
+    $subscriber->pull();
+});
+
+it('does not nack remaining messages when nack_on_shutdown is disabled', function () {
+    $message1 = Mockery::mock(Message::class);
+    $message2 = Mockery::mock(Message::class);
+
+    foreach ([$message1, $message2] as $msg) {
+        $msg->shouldReceive('data')->andReturn('{"x":1}');
+        $msg->shouldReceive('attributes')->andReturn([]);
+        $msg->shouldReceive('id')->andReturn('msg');
+    }
+
+    $this->pubsubClient->shouldReceive('subscription')
+        ->with('test-subscription')
+        ->andReturn($this->subscription);
+
+    $this->subscription->shouldReceive('exists')->andReturn(true);
+    $this->subscription->shouldReceive('pull')
+        ->andReturn([$message1, $message2])
+        ->once();
+
+    $this->subscription->shouldReceive('acknowledge')->with($message1)->once();
+    $this->subscription->shouldNotReceive('modifyAckDeadline');
+
+    $subscriber = new class($this->pubsubClient, 'test-subscription', null, ['nack_on_shutdown' => false, 'monitoring' => ['log_consumed_messages' => false]]) extends Subscriber
+    {
+        protected function shouldStop(): bool
+        {
+            return true;
+        }
+    };
+
+    $subscriber->handler(fn () => null);
+    $subscriber->pull();
+});
