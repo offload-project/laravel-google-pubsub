@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.3.0 - 2026-06-15
+
+### Added
+- Nack unprocessed messages on graceful shutdown [#20](https://github.com/offload-project/laravel-google-pubsub/pull/20)
+
 ## v1.2.1 - 2026-06-15
 
 ### Fixed
