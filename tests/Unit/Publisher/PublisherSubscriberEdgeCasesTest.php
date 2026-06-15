@@ -17,12 +17,12 @@ use OffloadProject\GooglePubSub\Subscriber\Subscriber;
 
 describe('Publisher edge cases', function () {
     beforeEach(function () {
-        $this->client = Mockery::mock(PubSubClient::class);
+        $this->pubsubClient = Mockery::mock(PubSubClient::class);
         $this->topic = Mockery::mock(Topic::class);
     });
 
     it('uses cached topic instances', function () {
-        $this->client->shouldReceive('topic')
+        $this->pubsubClient->shouldReceive('topic')
             ->with('cached-topic')
             ->once()
             ->andReturn($this->topic);
@@ -32,7 +32,7 @@ describe('Publisher edge cases', function () {
             ->twice()
             ->andReturn(['messageIds' => ['msg-1']], ['messageIds' => ['msg-2']]);
 
-        $publisher = new Publisher($this->client, [
+        $publisher = new Publisher($this->pubsubClient, [
             'monitoring' => ['log_published_messages' => false],
             'message_options' => ['add_metadata' => false],
         ]);
@@ -52,7 +52,7 @@ describe('Publisher edge cases', function () {
             ->andReturn('custom-formatted-data')
             ->once();
 
-        $this->client->shouldReceive('topic')->andReturn($this->topic);
+        $this->pubsubClient->shouldReceive('topic')->andReturn($this->topic);
         $this->topic->shouldReceive('exists')->andReturn(true);
         $this->topic->shouldReceive('publish')
             ->withArgs(function ($message) {
@@ -60,7 +60,7 @@ describe('Publisher edge cases', function () {
             })
             ->andReturn(['messageIds' => ['msg-custom']]);
 
-        $publisher = new Publisher($this->client, [
+        $publisher = new Publisher($this->pubsubClient, [
             'monitoring' => ['log_published_messages' => false],
             'message_options' => ['add_metadata' => false],
         ]);
@@ -72,7 +72,7 @@ describe('Publisher edge cases', function () {
     it('does not compress when disabled via options', function () {
         $largeData = str_repeat('a', 5000);
 
-        $this->client->shouldReceive('topic')->andReturn($this->topic);
+        $this->pubsubClient->shouldReceive('topic')->andReturn($this->topic);
         $this->topic->shouldReceive('exists')->andReturn(true);
 
         $notCompressed = false;
@@ -85,7 +85,7 @@ describe('Publisher edge cases', function () {
             })
             ->andReturn(['messageIds' => ['msg-uncompressed']]);
 
-        $publisher = new Publisher($this->client, [
+        $publisher = new Publisher($this->pubsubClient, [
             'message_options' => [
                 'compress_payload' => true,
                 'compression_threshold' => 1024,
@@ -101,7 +101,7 @@ describe('Publisher edge cases', function () {
     });
 
     it('enables message ordering for specific topics', function () {
-        $this->client->shouldReceive('topic')
+        $this->pubsubClient->shouldReceive('topic')
             ->with('ordered-topic')
             ->andReturn($this->topic);
 
@@ -114,7 +114,7 @@ describe('Publisher edge cases', function () {
         $this->topic->shouldReceive('publish')
             ->andReturn(['messageIds' => ['msg-ordered']]);
 
-        $publisher = new Publisher($this->client, [
+        $publisher = new Publisher($this->pubsubClient, [
             'auto_create_topics' => true,
             'topics' => [
                 'ordered-topic' => ['enable_message_ordering' => true],
@@ -127,12 +127,12 @@ describe('Publisher edge cases', function () {
     });
 
     it('throws exception when publish returns no message id', function () {
-        $this->client->shouldReceive('topic')->andReturn($this->topic);
+        $this->pubsubClient->shouldReceive('topic')->andReturn($this->topic);
         $this->topic->shouldReceive('exists')->andReturn(true);
         $this->topic->shouldReceive('publish')
             ->andReturn([]); // No messageIds
 
-        $publisher = new Publisher($this->client, [
+        $publisher = new Publisher($this->pubsubClient, [
             'monitoring' => ['log_published_messages' => false],
             'message_options' => ['add_metadata' => false],
         ]);
@@ -142,7 +142,7 @@ describe('Publisher edge cases', function () {
     });
 
     it('handles batch publish with mixed messages', function () {
-        $this->client->shouldReceive('topic')->andReturn($this->topic);
+        $this->pubsubClient->shouldReceive('topic')->andReturn($this->topic);
         $this->topic->shouldReceive('exists')->andReturn(true);
         $this->topic->shouldReceive('publishBatch')
             ->withArgs(function ($messages) {
@@ -153,7 +153,7 @@ describe('Publisher edge cases', function () {
             })
             ->andReturn(['messageIds' => ['msg-1', 'msg-2', 'msg-3']]);
 
-        $publisher = new Publisher($this->client, [
+        $publisher = new Publisher($this->pubsubClient, [
             'monitoring' => ['log_published_messages' => false],
             'message_options' => ['add_metadata' => false],
         ]);
@@ -172,20 +172,19 @@ describe('Publisher edge cases', function () {
 
 describe('Subscriber edge cases', function () {
     beforeEach(function () {
-        $this->client = Mockery::mock(PubSubClient::class);
+        $this->pubsubClient = Mockery::mock(PubSubClient::class);
         $this->subscription = Mockery::mock(Subscription::class);
         $this->topic = Mockery::mock(Topic::class);
         $this->message = Mockery::mock(Message::class);
     });
 
     it('can set custom formatter', function () {
-        $subscriber = new Subscriber($this->client, 'test-subscription');
+        $subscriber = new Subscriber($this->pubsubClient, 'test-subscription');
 
         $customFormatter = new CloudEventsFormatter();
 
         $reflection = new ReflectionClass($subscriber);
         $property = $reflection->getProperty('formatter');
-        $property->setAccessible(true);
         $property->setValue($subscriber, $customFormatter);
 
         $value = $property->getValue($subscriber);
@@ -194,11 +193,11 @@ describe('Subscriber edge cases', function () {
     });
 
     it('creates topic when auto create enabled and topic missing', function () {
-        $this->client->shouldReceive('subscription')
+        $this->pubsubClient->shouldReceive('subscription')
             ->with('new-subscription')
             ->andReturn($this->subscription);
 
-        $this->client->shouldReceive('topic')
+        $this->pubsubClient->shouldReceive('topic')
             ->with('test-topic')
             ->andReturn($this->topic);
 
@@ -209,7 +208,7 @@ describe('Subscriber edge cases', function () {
 
         $this->subscription->shouldReceive('pull')->andReturn([]);
 
-        $subscriber = new Subscriber($this->client, 'new-subscription', 'test-topic', [
+        $subscriber = new Subscriber($this->pubsubClient, 'new-subscription', 'test-topic', [
             'auto_create_subscriptions' => true,
             'auto_create_topics' => true,
             'monitoring' => ['log_consumed_messages' => false],
@@ -219,12 +218,12 @@ describe('Subscriber edge cases', function () {
     });
 
     it('throws exception when creating subscription without topic', function () {
-        $this->client->shouldReceive('subscription')
+        $this->pubsubClient->shouldReceive('subscription')
             ->andReturn($this->subscription);
 
         $this->subscription->shouldReceive('exists')->andReturn(false);
 
-        $subscriber = new Subscriber($this->client, 'new-subscription', null, [
+        $subscriber = new Subscriber($this->pubsubClient, 'new-subscription', null, [
             'auto_create_subscriptions' => true,
         ]);
 
@@ -236,7 +235,7 @@ describe('Subscriber edge cases', function () {
         $message1 = Mockery::mock(Message::class);
         $message2 = Mockery::mock(Message::class);
 
-        $this->client->shouldReceive('subscription')
+        $this->pubsubClient->shouldReceive('subscription')
             ->andReturn($this->subscription);
 
         $this->subscription->shouldReceive('exists')->andReturn(true);
@@ -244,19 +243,18 @@ describe('Subscriber edge cases', function () {
             ->with([$message1, $message2])
             ->once();
 
-        $subscriber = new Subscriber($this->client, 'test-subscription');
+        $subscriber = new Subscriber($this->pubsubClient, 'test-subscription');
 
         // Set subscription via reflection
         $reflection = new ReflectionClass($subscriber);
         $property = $reflection->getProperty('subscription');
-        $property->setAccessible(true);
         $property->setValue($subscriber, $this->subscription);
 
         $subscriber->acknowledgeBatch([$message1, $message2]);
     });
 
     it('handles multiple handlers', function () {
-        $this->client->shouldReceive('subscription')
+        $this->pubsubClient->shouldReceive('subscription')
             ->andReturn($this->subscription);
 
         $this->subscription->shouldReceive('exists')->andReturn(true);
@@ -267,7 +265,7 @@ describe('Subscriber edge cases', function () {
         $this->message->shouldReceive('attributes')->andReturn([]);
         $this->message->shouldReceive('id')->andReturn('msg-123');
 
-        $subscriber = new Subscriber($this->client, 'test-subscription', null, [
+        $subscriber = new Subscriber($this->pubsubClient, 'test-subscription', null, [
             'monitoring' => ['log_consumed_messages' => false],
         ]);
 
@@ -289,7 +287,7 @@ describe('Subscriber edge cases', function () {
     });
 
     it('throws exception when decompression fails', function () {
-        $this->client->shouldReceive('subscription')
+        $this->pubsubClient->shouldReceive('subscription')
             ->andReturn($this->subscription);
 
         $this->subscription->shouldReceive('exists')->andReturn(true);
@@ -299,7 +297,7 @@ describe('Subscriber edge cases', function () {
         $this->message->shouldReceive('attributes')->andReturn(['compressed' => 'true']);
         $this->message->shouldReceive('id')->andReturn('msg-123');
 
-        $subscriber = new Subscriber($this->client, 'test-subscription', null, [
+        $subscriber = new Subscriber($this->pubsubClient, 'test-subscription', null, [
             'monitoring' => ['log_consumed_messages' => false],
         ]);
 
@@ -316,10 +314,10 @@ describe('Subscriber edge cases', function () {
     });
 
     it('configures retry policy in subscription', function () {
-        $this->client->shouldReceive('subscription')
+        $this->pubsubClient->shouldReceive('subscription')
             ->andReturn($this->subscription);
 
-        $this->client->shouldReceive('topic')
+        $this->pubsubClient->shouldReceive('topic')
             ->andReturn($this->topic);
 
         $this->subscription->shouldReceive('exists')->andReturn(false);
@@ -338,7 +336,7 @@ describe('Subscriber edge cases', function () {
 
         $this->subscription->shouldReceive('pull')->andReturn([]);
 
-        $subscriber = new Subscriber($this->client, 'retry-subscription', 'test-topic', [
+        $subscriber = new Subscriber($this->pubsubClient, 'retry-subscription', 'test-topic', [
             'auto_create_subscriptions' => true,
             'retry_policy' => [
                 'minimumBackoff' => 10,
@@ -355,14 +353,14 @@ describe('Subscriber edge cases', function () {
 
 describe('StreamingSubscriber edge cases', function () {
     beforeEach(function () {
-        $this->client = Mockery::mock(PubSubClient::class);
+        $this->pubsubClient = Mockery::mock(PubSubClient::class);
         $this->subscription = Mockery::mock(Subscription::class);
         $this->message = Mockery::mock(Message::class);
     });
 
     it('uses flow control configuration', function () {
         $subscriber = new StreamingSubscriber(
-            $this->client,
+            $this->pubsubClient,
             'test-subscription',
             null,
             ['max_messages_per_pull' => 100]
@@ -375,7 +373,7 @@ describe('StreamingSubscriber edge cases', function () {
 
     it('configures wait time between pulls', function () {
         $subscriber = new StreamingSubscriber(
-            $this->client,
+            $this->pubsubClient,
             'test-subscription',
             null,
             []
@@ -387,7 +385,7 @@ describe('StreamingSubscriber edge cases', function () {
     });
 
     it('processes messages in stream', function () {
-        $this->client->shouldReceive('subscription')
+        $this->pubsubClient->shouldReceive('subscription')
             ->andReturn($this->subscription);
 
         $this->subscription->shouldReceive('exists')->andReturn(true);
@@ -408,13 +406,15 @@ describe('StreamingSubscriber edge cases', function () {
             ->with($this->message)
             ->once();
 
-        $subscriber = new class($this->client, 'test-subscription', null, ['monitoring' => ['log_consumed_messages' => false]]) extends StreamingSubscriber
+        $subscriber = new class($this->pubsubClient, 'test-subscription', null, ['monitoring' => ['log_consumed_messages' => false]]) extends StreamingSubscriber
         {
             public $pullCount = 0;
 
+            // shouldStop() is invoked from both the per-message inner loop and the
+            // outer-loop check, so 2 pull cycles produce 3 calls total.
             protected function shouldStop(): bool
             {
-                return ++$this->pullCount >= 2;
+                return ++$this->pullCount >= 3;
             }
         };
 

@@ -138,6 +138,10 @@ class Subscriber
                 } catch (Exception $e) {
                     $this->handleError($e, $message);
                 }
+
+                if ($this->shouldStop()) {
+                    break;
+                }
             }
 
             return $results;

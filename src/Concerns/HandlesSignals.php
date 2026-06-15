@@ -50,6 +50,10 @@ trait HandlesSignals
             return;
         }
 
+        // Async dispatch so handlers fire during blocking syscalls (e.g. streaming pull)
+        // instead of waiting for the next pcntl_signal_dispatch() poll.
+        pcntl_async_signals(true);
+
         // Handle SIGTERM (sent by Docker/Kubernetes for graceful shutdown)
         pcntl_signal(SIGTERM, function () {
             $this->handleShutdownSignal('SIGTERM');
