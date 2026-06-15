@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.1 - 2026-06-15
+
+### Fixed
+- Make streaming pull responsive to SIGTERM ([156cb9c](https://github.com/offload-project/laravel-google-pubsub/commit/156cb9c6c0ad7b302d95d3d0e013c43295c87701))
+- Fmt from pr ([7b8a795](https://github.com/offload-project/laravel-google-pubsub/commit/7b8a79570f8e8774a0f1b86eb15283532c52957a))
+
+### Documentation
+- Update badges ([2cdd8d4](https://github.com/offload-project/laravel-google-pubsub/commit/2cdd8d417d92f845b0ad6614ba2ef5a0be9b4986))
+
 ## v1.2.0 - 2026-06-14
 
 ### Fixed
