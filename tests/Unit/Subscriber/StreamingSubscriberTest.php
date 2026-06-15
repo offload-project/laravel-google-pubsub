@@ -154,3 +154,38 @@ it('respects max messages per pull configuration', function () {
 
     expect(true)->toBeTrue(); // Add assertion
 });
+
+it('nacks remaining messages when shouldStop fires mid-stream batch', function () {
+    $message1 = Mockery::mock(Message::class);
+    $message2 = Mockery::mock(Message::class);
+
+    foreach ([$message1, $message2] as $msg) {
+        $msg->shouldReceive('data')->andReturn('{"x":1}');
+        $msg->shouldReceive('attributes')->andReturn([]);
+        $msg->shouldReceive('id')->andReturn('msg');
+        $msg->shouldReceive('publishTime')->andReturn('2024-01-01T00:00:00Z');
+    }
+
+    $this->pubsubClient->shouldReceive('subscription')
+        ->with('test-subscription')
+        ->andReturn($this->subscription);
+
+    $this->subscription->shouldReceive('exists')->andReturn(true);
+    $this->subscription->shouldReceive('pull')
+        ->andReturn([$message1, $message2])
+        ->once();
+
+    $this->subscription->shouldReceive('acknowledge')->with($message1)->once();
+    $this->subscription->shouldReceive('modifyAckDeadline')->with($message2, 0)->once();
+
+    $subscriber = new class($this->pubsubClient, 'test-subscription', null, ['monitoring' => ['log_consumed_messages' => false]]) extends StreamingSubscriber
+    {
+        protected function shouldStop(): bool
+        {
+            return true;
+        }
+    };
+
+    $subscriber->handler(fn () => null);
+    $subscriber->stream();
+});

@@ -43,7 +43,7 @@ class StreamingSubscriber extends Subscriber
                 $messages = $subscription->pull($pullOptions);
 
                 if (! empty($messages)) {
-                    foreach ($messages as $message) {
+                    foreach ($messages as $i => $message) {
                         try {
                             $this->processStreamMessage($message, $subscription);
                         } catch (Exception $e) {
@@ -56,6 +56,7 @@ class StreamingSubscriber extends Subscriber
                         }
 
                         if ($this->shouldStop()) {
+                            $this->nackRemaining(array_slice($messages, $i + 1));
                             break;
                         }
                     }
