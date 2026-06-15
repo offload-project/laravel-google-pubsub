@@ -30,7 +30,6 @@ describe('PubSubServiceProvider', function () {
 
         $reflection = new ReflectionClass($queueManager);
         $property = $reflection->getProperty('connectors');
-        $property->setAccessible(true);
         $connectors = $property->getValue($queueManager);
 
         expect($connectors)->toHaveKey('pubsub');
@@ -41,7 +40,6 @@ describe('PubSubServiceProvider', function () {
 
         $reflection = new ReflectionClass($queueManager);
         $property = $reflection->getProperty('connectors');
-        $property->setAccessible(true);
         $connectors = $property->getValue($queueManager);
 
         expect($connectors['pubsub'])->toBeCallable();
@@ -118,7 +116,6 @@ describe('PubSubServiceProvider', function () {
         // Use reflection to verify the boot method checks the config
         $reflection = new ReflectionClass($provider);
         $method = $reflection->getMethod('registerWebhookRoutes');
-        $method->setAccessible(true);
 
         // When disabled, this should return early without registering routes
         // We can't easily test the route collection in isolation, but we can

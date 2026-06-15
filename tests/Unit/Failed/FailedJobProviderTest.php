@@ -260,7 +260,6 @@ describe('PubSubFailedJobProvider', function () {
 
         $reflection = new ReflectionClass($provider);
         $method = $reflection->getMethod('getPubSubClient');
-        $method->setAccessible(true);
 
         // This should create a client using the fallback path
         $client = $method->invoke($provider);

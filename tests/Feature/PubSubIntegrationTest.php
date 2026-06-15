@@ -12,7 +12,6 @@ it('can be registered as a queue driver', function () {
     // Check that the connector is registered
     $reflection = new ReflectionClass($manager);
     $property = $reflection->getProperty('connectors');
-    $property->setAccessible(true);
     $connectors = $property->getValue($manager);
 
     expect(array_key_exists('pubsub', $connectors))->toBeTrue();

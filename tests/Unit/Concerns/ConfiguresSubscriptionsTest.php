@@ -7,7 +7,7 @@ use Google\Cloud\PubSub\Topic;
 use OffloadProject\GooglePubSub\Concerns\ConfiguresSubscriptions;
 
 beforeEach(function () {
-    $this->client = Mockery::mock(PubSubClient::class);
+    $this->pubsubClient = Mockery::mock(PubSubClient::class);
     $this->topic = Mockery::mock(Topic::class);
 
     // Create a test class that uses the trait
@@ -157,7 +157,7 @@ describe('ConfiguresSubscriptions buildDeadLetterPolicy', function () {
         $deadLetterTopic->shouldReceive('exists')->andReturn(true);
         $deadLetterTopic->shouldReceive('name')->andReturn('projects/test/topics/my-topic-dead-letter');
 
-        $this->client->shouldReceive('topic')
+        $this->pubsubClient->shouldReceive('topic')
             ->with('my-topic-dead-letter')
             ->andReturn($deadLetterTopic);
 
@@ -166,7 +166,7 @@ describe('ConfiguresSubscriptions buildDeadLetterPolicy', function () {
         $result = $this->configurator->publicBuildDeadLetterPolicy(
             $deadLetterConfig,
             'my-topic',
-            $this->client
+            $this->pubsubClient
         );
 
         expect($result)->toHaveKey('deadLetterTopic');
@@ -180,7 +180,7 @@ describe('ConfiguresSubscriptions buildDeadLetterPolicy', function () {
         $deadLetterTopic->shouldReceive('exists')->andReturn(true);
         $deadLetterTopic->shouldReceive('name')->andReturn('projects/test/topics/my-topic-dlq');
 
-        $this->client->shouldReceive('topic')
+        $this->pubsubClient->shouldReceive('topic')
             ->with('my-topic-dlq')
             ->andReturn($deadLetterTopic);
 
@@ -192,7 +192,7 @@ describe('ConfiguresSubscriptions buildDeadLetterPolicy', function () {
         $result = $this->configurator->publicBuildDeadLetterPolicy(
             $deadLetterConfig,
             'my-topic',
-            $this->client
+            $this->pubsubClient
         );
 
         expect($result['maxDeliveryAttempts'])->toBe(3);
@@ -204,7 +204,7 @@ describe('ConfiguresSubscriptions buildDeadLetterPolicy', function () {
         $deadLetterTopic->shouldReceive('create')->once();
         $deadLetterTopic->shouldReceive('name')->andReturn('projects/test/topics/my-topic-dead-letter');
 
-        $this->client->shouldReceive('topic')
+        $this->pubsubClient->shouldReceive('topic')
             ->with('my-topic-dead-letter')
             ->andReturn($deadLetterTopic);
 
@@ -213,7 +213,7 @@ describe('ConfiguresSubscriptions buildDeadLetterPolicy', function () {
         $result = $this->configurator->publicBuildDeadLetterPolicy(
             $deadLetterConfig,
             'my-topic',
-            $this->client
+            $this->pubsubClient
         );
 
         expect($result)->toHaveKey('deadLetterTopic');
@@ -225,7 +225,7 @@ describe('ConfiguresSubscriptions buildDeadLetterPolicy', function () {
         $deadLetterTopic->shouldNotReceive('create');
         $deadLetterTopic->shouldReceive('name')->andReturn('projects/test/topics/my-topic-dead-letter');
 
-        $this->client->shouldReceive('topic')
+        $this->pubsubClient->shouldReceive('topic')
             ->with('my-topic-dead-letter')
             ->andReturn($deadLetterTopic);
 
@@ -234,7 +234,7 @@ describe('ConfiguresSubscriptions buildDeadLetterPolicy', function () {
         $result = $this->configurator->publicBuildDeadLetterPolicy(
             $deadLetterConfig,
             'my-topic',
-            $this->client,
+            $this->pubsubClient,
             false // autoCreateTopics = false
         );
 
@@ -246,12 +246,12 @@ describe('ConfiguresSubscriptions buildDeadLetterPolicy', function () {
         $deadLetterTopic->shouldReceive('exists')->andReturn(true);
         $deadLetterTopic->shouldReceive('name')->andReturn('projects/test/topics/my-topic-dead-letter');
 
-        $this->client->shouldReceive('topic')->andReturn($deadLetterTopic);
+        $this->pubsubClient->shouldReceive('topic')->andReturn($deadLetterTopic);
 
         $result = $this->configurator->publicBuildDeadLetterPolicy(
             [],
             'my-topic',
-            $this->client
+            $this->pubsubClient
         );
 
         expect($result['maxDeliveryAttempts'])->toBe(5);
@@ -263,14 +263,14 @@ describe('ConfiguresSubscriptions ensureTopicExists', function () {
         $this->topic->shouldReceive('exists')->andReturn(true);
         $this->topic->shouldNotReceive('create');
 
-        $this->client->shouldReceive('topic')
+        $this->pubsubClient->shouldReceive('topic')
             ->with('existing-topic')
             ->andReturn($this->topic);
 
         $config = ['auto_create_topics' => true];
 
         $result = $this->configurator->publicEnsureTopicExists(
-            $this->client,
+            $this->pubsubClient,
             'existing-topic',
             $config
         );
@@ -282,14 +282,14 @@ describe('ConfiguresSubscriptions ensureTopicExists', function () {
         $this->topic->shouldReceive('exists')->andReturn(false);
         $this->topic->shouldReceive('create')->with([])->once();
 
-        $this->client->shouldReceive('topic')
+        $this->pubsubClient->shouldReceive('topic')
             ->with('new-topic')
             ->andReturn($this->topic);
 
         $config = ['auto_create_topics' => true];
 
         $result = $this->configurator->publicEnsureTopicExists(
-            $this->client,
+            $this->pubsubClient,
             'new-topic',
             $config
         );
@@ -301,14 +301,14 @@ describe('ConfiguresSubscriptions ensureTopicExists', function () {
         $this->topic->shouldReceive('exists')->andReturn(false);
         $this->topic->shouldNotReceive('create');
 
-        $this->client->shouldReceive('topic')
+        $this->pubsubClient->shouldReceive('topic')
             ->with('missing-topic')
             ->andReturn($this->topic);
 
         $config = ['auto_create_topics' => false];
 
         $result = $this->configurator->publicEnsureTopicExists(
-            $this->client,
+            $this->pubsubClient,
             'missing-topic',
             $config
         );
@@ -322,7 +322,7 @@ describe('ConfiguresSubscriptions ensureTopicExists', function () {
             ->with(['enableMessageOrdering' => true])
             ->once();
 
-        $this->client->shouldReceive('topic')
+        $this->pubsubClient->shouldReceive('topic')
             ->with('ordered-topic')
             ->andReturn($this->topic);
 
@@ -330,7 +330,7 @@ describe('ConfiguresSubscriptions ensureTopicExists', function () {
         $topicOptions = ['enableMessageOrdering' => true];
 
         $result = $this->configurator->publicEnsureTopicExists(
-            $this->client,
+            $this->pubsubClient,
             'ordered-topic',
             $config,
             $topicOptions
@@ -346,7 +346,7 @@ describe('ConfiguresSubscriptions buildSubscriptionConfig with dead letter', fun
         $deadLetterTopic->shouldReceive('exists')->andReturn(true);
         $deadLetterTopic->shouldReceive('name')->andReturn('projects/test/topics/test-topic-dead-letter');
 
-        $this->client->shouldReceive('topic')
+        $this->pubsubClient->shouldReceive('topic')
             ->with('test-topic-dead-letter')
             ->andReturn($deadLetterTopic);
 
@@ -360,7 +360,7 @@ describe('ConfiguresSubscriptions buildSubscriptionConfig with dead letter', fun
         $result = $this->configurator->publicBuildSubscriptionConfig(
             $config,
             'test-topic',
-            $this->client
+            $this->pubsubClient
         );
 
         expect($result)->toHaveKey('deadLetterPolicy');
@@ -386,7 +386,7 @@ describe('ConfiguresSubscriptions buildSubscriptionConfig with dead letter', fun
             ],
         ];
 
-        $result = $this->configurator->publicBuildSubscriptionConfig($config, null, $this->client);
+        $result = $this->configurator->publicBuildSubscriptionConfig($config, null, $this->pubsubClient);
 
         expect($result)->not->toHaveKey('deadLetterPolicy');
     });

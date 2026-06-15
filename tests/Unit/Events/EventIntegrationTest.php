@@ -169,7 +169,6 @@ describe('PubSubEventDispatcher', function () {
         // Manually set the dispatching array to simulate an event already being processed
         $reflection = new ReflectionClass($dispatcher);
         $property = $reflection->getProperty('dispatching');
-        $property->setAccessible(true);
         $property->setValue($dispatcher, [TestOrderEvent::class]);
 
         // This call should be ignored since the event is already being dispatched
