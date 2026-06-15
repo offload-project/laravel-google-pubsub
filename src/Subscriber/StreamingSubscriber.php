@@ -54,6 +54,10 @@ class StreamingSubscriber extends Subscriber
                                 $subscription->modifyAckDeadline($message, 0);
                             }
                         }
+
+                        if ($this->shouldStop()) {
+                            break;
+                        }
                     }
                 }
 
