@@ -441,10 +441,14 @@ Subscribers automatically respond to shutdown signals when the PCNTL extension i
 - **SIGQUIT**: Sent when pressing Ctrl+\
 
 ```php
-// The subscriber will finish processing its current message
-// and exit cleanly when a signal is received
+// The subscriber will finish processing its current message, nack any
+// remaining pulled-but-unprocessed messages from the in-flight batch
+// (so Pub/Sub redelivers them immediately on the next pull cycle),
+// and exit cleanly when a signal is received.
 $subscriber->listen();
 ```
+
+To fall back to the previous behavior — abandon unprocessed messages and let the ack deadline expire — set `nack_on_shutdown` to `false` in the connection config.
 
 ### Programmatic Stop
 
@@ -487,5 +491,5 @@ RUN docker-php-ext-install pcntl
 
 - The PCNTL extension is required for signal handling (standard in most PHP installations)
 - Without PCNTL, signals are ignored but the subscriber still works
-- The subscriber finishes processing its current batch before stopping
-- Set appropriate `terminationGracePeriodSeconds` based on your message processing time
+- The subscriber finishes processing its **current message**, nacks the rest of the in-flight batch, and exits — it does not wait for the whole batch to complete
+- Set appropriate `terminationGracePeriodSeconds` based on your single-message processing time, not the full batch

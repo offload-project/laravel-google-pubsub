@@ -51,6 +51,7 @@ Control automatic creation of topics and subscriptions:
 'auto_create_subscriptions' => env('PUBSUB_AUTO_CREATE_SUBSCRIPTIONS', true),
 'auto_acknowledge' => env('PUBSUB_AUTO_ACKNOWLEDGE', true),
 'nack_on_error' => env('PUBSUB_NACK_ON_ERROR', true),
+'nack_on_shutdown' => env('PUBSUB_NACK_ON_SHUTDOWN', true),
 ```
 
 **Environment Variables:**
@@ -60,7 +61,10 @@ PUBSUB_AUTO_CREATE_TOPICS=true
 PUBSUB_AUTO_CREATE_SUBSCRIPTIONS=true
 PUBSUB_AUTO_ACKNOWLEDGE=true
 PUBSUB_NACK_ON_ERROR=true
+PUBSUB_NACK_ON_SHUTDOWN=true
 ```
+
+**`nack_on_shutdown`** — when the subscriber receives SIGTERM/SIGINT mid-batch, nack any pulled-but-unprocessed messages (sets their ack deadline to 0) so Pub/Sub redelivers them immediately. With this off, the messages are abandoned and only redelivered after the configured `ack_deadline` expires. Defaults to `true`.
 
 **Best Practices:**
 
